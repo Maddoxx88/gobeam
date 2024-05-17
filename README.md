@@ -1,5 +1,3 @@
 # gobeam
 
-## Running the application
-
-- Run the application using `make server`
+a file upload app powered by golang and nextjs
