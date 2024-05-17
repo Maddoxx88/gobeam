@@ -1,2 +1,2 @@
 server:
-	go run ./cmd/api/server/main.go
+	go run ./backend/cmd/api/server/main.go
