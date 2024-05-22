@@ -4,28 +4,18 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"strings"
 )
 
-func GetExtension(f_name string) string {
-	var temp string = ""
-	for index, value := range f_name {
-		t := string(value)
-		i := index + 1
-		if t == "." {
-			for {
-				if i == len(f_name) {
-					break
-				}
-				if string(f_name[i]) == "." {
-					temp = ""
-					break
-				}
-				temp += string(f_name[i])
-				i++
-			}
+func GetNameAndExtension(f_name string) (string, string) {
+	arr := strings.Split(f_name, ".")
+	name := ""
+	for i, v := range arr {
+		if i != (len(arr) - 1) {
+			name += v
 		}
 	}
-	return temp
+	return name, arr[len(arr)-1]
 }
 
 func ReadFileToBytes(file multipart.File) ([]byte, error) {
