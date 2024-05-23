@@ -66,7 +66,7 @@ func main() {
 	router.HandleFunc("/upload", app.UploadFileHandler).Methods("POST")
 	router.HandleFunc("/download/{file-name}", app.RetrieveFileHandler).Methods("GET")
 	router.HandleFunc("/list", app.GetAllFilesHandler).Methods("GET")
-	router.HandleFunc("/download/{file-name}", app.DeleteFileHandler).Methods("DELETE")
+	router.HandleFunc("/delete/{id}", app.DeleteFileHandler).Methods("DELETE")
 
 	//starting the server
 	fmt.Println("Starting the server on the port ", port)

@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 )
@@ -11,6 +12,25 @@ type File struct {
 	Name      string `json:"name"`
 	Data      []byte `json:"data"`
 	Extension string `json:"extension"`
+}
+
+func (f *File) MarshalJSON() ([]byte, error) {
+	response, err := json.Marshal(struct {
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		Data      []byte `json:"data"`
+		Extension string `json:"extension"`
+	}{
+		Id:        f.Id,
+		Name:      f.Name,
+		Data:      f.Data,
+		Extension: f.Extension,
+	})
+	if err != nil {
+		return nil, err
+	}
+	response = append(response, '\n')
+	return response, nil
 }
 
 func InitDB(db *sql.DB) {

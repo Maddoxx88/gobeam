@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -72,6 +73,43 @@ func (app *application) RetrieveFileHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (app *application) GetAllFilesHandler(w http.ResponseWriter, r *http.Request) {}
+func (app *application) GetAllFilesHandler(w http.ResponseWriter, r *http.Request) {
+	query := `SELECT name,extension from FILES`
+	rows, err := app.db.Query(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
 
-func (app *application) DeleteFileHandler(w http.ResponseWriter, r *http.Request) {}
+	response_files := []db_model.File{}
+
+	for rows.Next() {
+		var name, extension string
+		if err := rows.Scan(&name, &extension); err != nil {
+			log.Fatal(err)
+		}
+		temp := db_model.File{}
+		temp.Name = name
+		temp.Extension = extension
+		response_files = append(response_files, temp)
+	}
+
+	response, err := json.Marshal(response_files)
+	if err != nil {
+		log.Fatal("Error in marshaling(converting resposne to JSON) the response ", err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+}
+
+func (app *application) DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	query := `DELETE FROM FILES WHERE Id=?`
+	_, err := app.db.Exec(query, id)
+	if err != nil {
+		log.Fatal("Error while deleting the file from database with id ", id, " ", err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(fmt.Sprint("Successfully deleted the data with id ", id)))
+}
