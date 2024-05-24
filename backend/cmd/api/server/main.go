@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	handlers "github.com/Maddoxx88/gobeam/handlers"
+	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/Maddoxx88/gobeam/database"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
@@ -17,12 +19,21 @@ type config struct {
 	port    string
 }
 
+type application struct {
+	config config
+	db     *sql.DB
+}
+
 func main() {
 
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Issues reading from the env file ,", err.Error())
 	}
+
+	//getting the required values from env files
+	address := os.Getenv("APP_Addr")
+	port := os.Getenv("APP_Port")
 
 	//opening a sqllite connection
 	db, err := sql.Open("sqlite3", os.Getenv("DB"))
@@ -32,24 +43,32 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//Make sure the server is running till it gets instructuction to kill
-	// killcheck := make(chan os.Signal, 1)
-	// signal.Notify(killcheck, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	defer db.Close()
+
+	//Making sure the database connection is available
+	err = db.Ping()
+	if err != nil {
+		log.Fatal("Cannot connect to database ", err)
+	}
+
+	//Initializing the database and creating the table and trigger
+	database.InitDB(db)
 
 	router := mux.NewRouter() //initializing the router
 
-	//handling the endpoints
-	router.HandleFunc("/upload", handlers.UploadFileHandler).Methods("POST")
-	router.HandleFunc("/download/{file-name}", handlers.RetrieveFileHandler).Methods("GET")
-	router.HandleFunc("/list", handlers.GetAllFilesHandler).Methods("GET")
-	router.HandleFunc("/download/{file-name}", handlers.DeleteFileHandler).Methods("DELETE")
+	//initializing the application structure
+	app := &application{
+		config: config{version: "1.0.0", port: port},
+		db:     db,
+	}
 
-	//getting the required values from env files
-	address := os.Getenv("APP_Addr")
-	port := os.Getenv("APP_Port")
+	//handling the endpoints
+	router.HandleFunc("/upload", app.UploadFileHandler).Methods("POST")
+	router.HandleFunc("/download/{file-name}", app.RetrieveFileHandler).Methods("GET")
+	router.HandleFunc("/list", app.GetAllFilesHandler).Methods("GET")
+	router.HandleFunc("/delete/{id}", app.DeleteFileHandler).Methods("DELETE")
 
 	//starting the server
-
 	fmt.Println("Starting the server on the port ", port)
 	srv := &http.Server{
 		Handler: router,
